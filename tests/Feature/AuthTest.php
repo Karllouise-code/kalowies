@@ -12,7 +12,7 @@ class AuthTest extends TestCase
 
     public function test_user_can_register(): void
     {
-        $response = $this->postJson('/api/register', [
+        $response = $this->withHeaders(['Origin' => 'http://localhost'])->postJson('/api/register', [
             'name' => 'Karlo',
             'email' => 'karlo@example.com',
             'password' => 'password',
@@ -27,7 +27,7 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create(['password' => bcrypt('secret123')]);
 
-        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'secret123'])
+        $this->withHeaders(['Origin' => 'http://localhost'])->postJson('/api/login', ['email' => $user->email, 'password' => 'secret123'])
             ->assertOk()
             ->assertJsonPath('user.email', $user->email);
     }
@@ -51,6 +51,6 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->postJson('/api/logout')->assertOk();
+        $this->actingAs($user)->withHeaders(['Origin' => 'http://localhost'])->postJson('/api/logout')->assertOk();
     }
 }

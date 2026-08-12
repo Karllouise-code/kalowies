@@ -16,8 +16,8 @@ class MealItemController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:120'],
-            'grams' => ['sometimes', 'numeric', 'min:0.1', 'max:3000'],
-            'calories' => ['sometimes', 'numeric', 'min:0', 'max:2000'],
+            'grams' => ['sometimes', 'numeric', 'min:1', 'max:3000'],
+            'calories' => ['sometimes', 'numeric', 'min:1', 'max:2000'],
             'protein' => ['sometimes', 'numeric', 'min:0', 'max:500'],
             'carbs' => ['sometimes', 'numeric', 'min:0', 'max:500'],
             'fat' => ['sometimes', 'numeric', 'min:0', 'max:500'],

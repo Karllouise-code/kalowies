@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DailySummaryController;
 use App\Http\Controllers\Api\MealController;
 use App\Http\Controllers\Api\MealItemController;
 use Illuminate\Support\Facades\Route;
@@ -21,4 +22,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::put('/meal-items/{item}', [MealItemController::class, 'update']);
     Route::delete('/meal-items/{item}', [MealItemController::class, 'destroy']);
+
+    Route::get('/daily-summary', [DailySummaryController::class, 'show']);
 });

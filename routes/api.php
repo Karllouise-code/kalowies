@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DailySummaryController;
 use App\Http\Controllers\Api\GoalController;
 use App\Http\Controllers\Api\MealController;
 use App\Http\Controllers\Api\MealItemController;
+use App\Http\Controllers\Api\MealScanController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -16,6 +17,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/meals', [MealController::class, 'index']);
     Route::post('/meals', [MealController::class, 'store']);
+    Route::post('/meals/scan', [MealScanController::class, 'scan']);
+
     Route::get('/meals/{meal}', [MealController::class, 'show']);
     Route::put('/meals/{meal}', [MealController::class, 'update']);
     Route::delete('/meals/{meal}', [MealController::class, 'destroy']);

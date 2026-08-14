@@ -119,7 +119,9 @@ Totals are **always derived from items and never accepted from request input** â
 ## Queue / scan flow
 
 1. `POST /api/meals/scan` validates the multipart upload (`image`, `date`, `type`).
-2. The file is stored on the **public** disk as `meals/<ulid>.<ext>`.
+2. The file is stored on the **public** disk under `meals/<random hash>` via
+   `$request->file('image')->store('meals', 'public')` (Laravel's default naming â€” a random
+   40-character hash, not a ULID; no custom naming strategy is configured).
 3. A meal is created with `status=draft`, `source=scan` and the stored `image_path`.
 4. `ProcessFoodScan::dispatch($meal->id)` is pushed onto the queue and the endpoint returns
    `201` immediately.
@@ -133,9 +135,10 @@ Totals are **always derived from items and never accepted from request input** â
   `draft` or `processing` (admitting `processing` lets a scheduled retry re-enter after a
   first-attempt failure). If the image is missing it fails immediately. Otherwise it sets
   `status=processing`, runs `FoodVisionService::analyze($image_path)`, and â€” when non-empty â€”
-  writes the returned items (with `sort_order` = array index), calls
-  `NutritionCalculator::recalculate()`, sets `status=ready` and clears `note`. When `analyze`
-  returns empty items it sets `status=failed` with note
+  writes the returned items via `items()->createMany(...)` (items keep `sort_order` default 0;
+  the `items()` relationship orders by `sort_order` then `id`, so display order tracks
+  insertion order), calls `NutritionCalculator::recalculate()`, sets `status=ready` and
+  clears `note`. When `analyze` returns empty items it sets `status=failed` with note
   `No food was detected in the image. Please try again.`
 - `failed(Throwable $e)`: sets `status=failed` with note
   `Could not analyze this image. Please try again.`

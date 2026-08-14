@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
     { path: '/', name: 'today', component: () => import('../pages/TodayView.vue'), meta: { requiresAuth: true } },
@@ -9,4 +10,19 @@ const routes = [
     { path: '/register', name: 'register', component: () => import('../pages/RegisterView.vue'), meta: { guestOnly: true } },
 ]
 
-export default createRouter({ history: createWebHistory(), routes })
+const router = createRouter({ history: createWebHistory(), routes })
+
+router.beforeEach(async (to) => {
+    const auth = useAuthStore()
+    if (!auth.initialized) {
+        await auth.initialize()
+    }
+    if (to.meta.requiresAuth && !auth.isAuthenticated) {
+        return { name: 'login' }
+    }
+    if (to.meta.guestOnly && auth.isAuthenticated) {
+        return { name: 'today' }
+    }
+})
+
+export default router

@@ -56,6 +56,7 @@
                 <input v-model.number="form.fat" type="number" min="0" max="500" placeholder="Fat (g)"
                     class="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none" />
             </div>
+            <p v-if="formError" class="mt-3 text-sm text-red-600">{{ formError }}</p>
             <button @click.prevent="submitManual" class="mt-4 w-full rounded-xl bg-teal-600 py-3 font-semibold text-white">Log meal</button>
         </form>
 
@@ -77,6 +78,7 @@ const mealsStore = useMealsStore()
 
 const mealTypes = ['breakfast', 'snack', 'lunch', 'dinner']
 const showForm = ref(false)
+const formError = ref('')
 const form = reactive({ type: 'breakfast', name: '', grams: null, calories: null, protein: null, carbs: null, fat: null })
 
 const formattedDate = computed(() =>
@@ -93,17 +95,22 @@ function labelFor(type) {
 }
 
 async function submitManual() {
-    const item = {
-        name: form.name,
-        grams: form.grams ?? 1,
-        calories: form.calories ?? 0,
-        protein: form.protein ?? 0,
-        carbs: form.carbs ?? 0,
-        fat: form.fat ?? 0,
+    formError.value = ''
+    try {
+        const item = {
+            name: form.name,
+            grams: form.grams ?? 1,
+            calories: form.calories ?? 1,
+            protein: form.protein ?? 0,
+            carbs: form.carbs ?? 0,
+            fat: form.fat ?? 0,
+        }
+        await mealsStore.createManual({ type: form.type, items: [item] })
+        Object.assign(form, { name: '', grams: null, calories: null, protein: null, carbs: null, fat: null })
+        showForm.value = false
+    } catch (e) {
+        formError.value = e.response?.data?.message || 'Could not log the meal.'
     }
-    await mealsStore.createManual({ type: form.type, items: [item] })
-    Object.assign(form, { name: '', grams: null, calories: null, protein: null, carbs: null, fat: null })
-    showForm.value = false
 }
 
 async function onDeleted(meal) {

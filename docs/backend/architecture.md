@@ -79,11 +79,10 @@ Casts: `Meal` casts `date` to `date:Y-m-d` and the four `total_*` columns to flo
 - **Sources:** `scan` | `manual`.
 - Manual creation (`POST /api/meals`) writes `status=confirmed` directly.
 - Scanning (`POST /api/meals/scan`) creates `status=draft`, `source=scan`.
-- `POST /api/meals/{meal}/confirm` is the only place a transition is performed in code today:
-  `ready` → `confirmed` (it also recalculates totals and clears `note`).
-- The `processing` and `ready` transitions (and the `failed` path) are defined by the status
-  constants but the job that would perform them is **currently a stub** — see
-  "Queue / scan flow" below.
+- `POST /api/meals/{meal}/confirm` — `ready` → `confirmed` (recalculates totals and clears
+  `note`); only allowed for `ready` meals with ≥ 1 item.
+- `ProcessFoodScan` performs the scan transitions `draft` → `processing` → `ready` (or
+  `failed`) — see "Queue / scan flow" below.
 
 ## Services
 
@@ -125,17 +124,22 @@ Totals are **always derived from items and never accepted from request input** �
 4. `ProcessFoodScan::dispatch($meal->id)` is pushed onto the queue and the endpoint returns
    `201` immediately.
 
-**`app/Jobs/ProcessFoodScan.php` (current state):**
+**`app/Jobs/ProcessFoodScan.php`:**
 
 - Implements `ShouldQueue`, uses `Queueable`, and takes a `public int $mealId`.
-- Its `handle()` method is **empty** — the job is a stub awaiting implementation. There are
-  no `$tries`, `$timeout` or `$backoff` properties, no status transitions, and no `failed()`
-  hook. Consequently scanned meals remain in `draft` until the job body is written.
-- The intended flow (per the implementation plan): guard against a missing or non-`draft`
-  meal; set `status=processing`; run `FoodVisionService::analyze()`; create the returned
-  items with `sort_order` = array index; call `NutritionCalculator::recalculate()`; set
-  `status=ready`. On `RuntimeException`, log and set `status=failed`. **None of this is
-  implemented yet.**
+- **Retry policy:** `public int $tries = 2`, `public int $timeout = 60`,
+  `public array $backoff = [10, 30]`.
+- `handle(FoodVisionService $vision)`: no-ops unless the meal exists and its status is
+  `draft` or `processing` (admitting `processing` lets a scheduled retry re-enter after a
+  first-attempt failure). If the image is missing it fails immediately. Otherwise it sets
+  `status=processing`, runs `FoodVisionService::analyze($image_path)`, and — when non-empty —
+  writes the returned items (with `sort_order` = array index), calls
+  `NutritionCalculator::recalculate()`, sets `status=ready` and clears `note`. When `analyze`
+  returns empty items it sets `status=failed` with note
+  `No food was detected in the image. Please try again.`
+- `failed(Throwable $e)`: sets `status=failed` with note
+  `Could not analyze this image. Please try again.`
+- Every failure path logs a warning via a shared `fail()` helper.
 - The frontend observes results by polling `GET /api/meals?date=YYYY-MM-DD` (which returns
   meals of every status) until a scanned meal reaches `ready`.
 
@@ -151,5 +155,10 @@ Totals are **always derived from items and never accepted from request input** �
   (`Storage::fake('public')`) and asserts `ProcessFoodScan` is pushed with the right `mealId`.
 - `FoodVisionServiceTest` stubs the Gemini HTTP call with `Http::fake()` (normalized items,
   invalid-item dropping, empty result, HTTP failure, malformed JSON); no real network calls.
-  There are no job-level tests because the job is a stub.
-- Full suite: **44 passed, 103 assertions, 0 failures** (verified with `php artisan test`).
+- `ProcessFoodScanTest` runs the real job against in-memory sqlite with `Http::fake()` for
+  Gemini: writes items and marks the meal `ready`, marks `failed` when no food is detected,
+  exercises the `failed()` callback, no-ops for a non-draft meal, and re-enters on a
+  `processing` meal (retry semantics).
+- `MealConfirmTest` locks the confirm lifecycle: `ready` + items → `confirmed`; `draft` → 422;
+  `ready` without items → 422; another user's meal → 404.
+- Full suite: **53 passed, 121 assertions, 0 failures** (verified with `php artisan test`).

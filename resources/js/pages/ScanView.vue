@@ -36,6 +36,7 @@
 
         <div v-else-if="stage === 'editing'" class="mt-6">
             <p class="mb-3 text-sm font-medium text-slate-500">Review and adjust before logging.</p>
+            <p v-if="scan.error" class="mb-3 text-center font-medium text-red-600">{{ scan.error }}</p>
             <MealItemRow
                 v-for="item in scan.meal.items"
                 :key="item.id"
@@ -103,9 +104,13 @@ async function analyze() {
 }
 
 async function confirmMeal() {
-    await scan.confirm()
-    await mealsStore.loadDay(mealsStore.date)
-    router.push({ name: 'today' })
+    try {
+        await scan.confirm()
+        await mealsStore.loadDay(mealsStore.date)
+        router.push({ name: 'today' })
+    } catch (e) {
+        // error surfaced via scan.error; user stays on the editing stage to retry
+    }
 }
 
 async function cancelScan() {

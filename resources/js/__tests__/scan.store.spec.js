@@ -68,4 +68,54 @@ describe('scan store', () => {
         expect(store.meal).toBeNull()
         expect(store.status).toBe('idle')
     })
+
+    it('stops with a failed status when the scan upload fails', async () => {
+        apiMock.scanMeal.mockRejectedValue({ response: { data: { message: 'upload failed' } } })
+
+        const store = useScanStore()
+        await store.start(new FormData())
+
+        expect(store.status).toBe('failed')
+        expect(store.error).toBe('upload failed')
+        expect(store.timer).toBeNull()
+    })
+
+    it('stops polling when the scan is cancelled', async () => {
+        apiMock.scanMeal.mockResolvedValue({ meal: { id: 2, status: 'draft' } })
+        apiMock.meal.mockResolvedValue({ meal: { id: 2, status: 'cancelled' } })
+
+        const store = useScanStore()
+        await store.start(new FormData())
+        await vi.advanceTimersByTimeAsync(2000)
+
+        expect(store.status).toBe('cancelled')
+        expect(store.timer).toBeNull()
+    })
+
+    it('stops polling when the status check fails', async () => {
+        apiMock.scanMeal.mockResolvedValue({ meal: { id: 2, status: 'draft' } })
+        apiMock.meal.mockRejectedValue({ message: 'nope' })
+
+        const store = useScanStore()
+        await store.start(new FormData())
+        await vi.advanceTimersByTimeAsync(2000)
+
+        expect(store.status).toBe('failed')
+        expect(store.error).toBe('Could not check scan status.')
+        expect(store.timer).toBeNull()
+    })
+
+    it('sets an error and rethrows when confirm fails', async () => {
+        apiMock.confirmMeal.mockRejectedValue({ response: { data: { message: 'not ready' } } })
+
+        const store = useScanStore()
+        store.meal = { id: 3 }
+        store.status = 'ready'
+
+        await expect(store.confirm()).rejects.toThrow()
+
+        expect(store.error).toBe('not ready')
+        expect(store.status).toBe('ready')
+        expect(store.meal.id).toBe(3)
+    })
 })

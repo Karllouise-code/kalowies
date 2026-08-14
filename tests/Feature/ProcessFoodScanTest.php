@@ -27,13 +27,18 @@ class ProcessFoodScanTest extends TestCase
 
     private function makeDraft(User $user): Meal
     {
+        return $this->makeMeal($user, 'draft');
+    }
+
+    private function makeMeal(User $user, string $status): Meal
+    {
         Storage::fake('public');
         Storage::disk('public')->put('meals/meal.jpg', 'bytes');
         $meal = Meal::create([
             'user_id' => $user->id,
             'date' => '2026-08-11',
             'type' => 'dinner',
-            'status' => 'draft',
+            'status' => $status,
             'source' => 'scan',
             'image_path' => 'meals/meal.jpg',
         ]);
@@ -98,5 +103,21 @@ class ProcessFoodScanTest extends TestCase
         (new ProcessFoodScan($meal->id))->handle(app(\App\Services\FoodVisionService::class));
 
         $this->assertSame('confirmed', $meal->fresh()->status);
+    }
+
+    public function test_job_reruns_analysis_when_meal_is_processing(): void
+    {
+        $user = User::factory()->create();
+        $meal = $this->makeMeal($user, 'processing');
+        $this->fakeGeminiResponse([
+            ['name' => 'Salad', 'grams' => 200, 'calories' => 120, 'protein' => 3, 'carbs' => 10, 'fat' => 8],
+        ]);
+
+        (new ProcessFoodScan($meal->id))->handle(app(\App\Services\FoodVisionService::class));
+
+        $meal->refresh();
+        $this->assertSame('ready', $meal->status);
+        $this->assertSame(1, $meal->items()->count());
+        $this->assertSame(120.0, $meal->total_calories);
     }
 }

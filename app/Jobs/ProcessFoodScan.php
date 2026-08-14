@@ -24,7 +24,7 @@ class ProcessFoodScan implements ShouldQueue
     {
         $meal = Meal::find($this->mealId);
 
-        if (! $meal || $meal->status !== Meal::STATUS_DRAFT) {
+        if (! $meal || ! in_array($meal->status, [Meal::STATUS_DRAFT, Meal::STATUS_PROCESSING])) {
             return;
         }
 

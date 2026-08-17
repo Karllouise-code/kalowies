@@ -26,7 +26,14 @@ import { api } from '../services/api'
 import MealCard from '../components/MealCard.vue'
 import WeeklyChart from '../components/WeeklyChart.vue'
 
-const date = ref(new Date().toISOString().slice(0, 10))
+function toLocalDate(d = new Date()) {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
+
+const date = ref(toLocalDate())
 const meals = ref([])
 const week = ref([])
 
@@ -36,7 +43,7 @@ function last7Days() {
     for (let i = 6; i >= 0; i--) {
         const d = new Date(today)
         d.setDate(today.getDate() - i)
-        days.push(d.toISOString().slice(0, 10))
+        days.push(toLocalDate(d))
     }
     return days
 }

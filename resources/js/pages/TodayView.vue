@@ -35,8 +35,10 @@
 
         <div class="mt-6 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-slate-800">Meals</h2>
-            <button @click="showForm = !showForm" class="text-sm font-medium text-teal-600">{{ showForm ? 'Close' : '+ Add meal' }}</button>
+            <button @click="toggleForm" class="text-sm font-medium text-teal-600">{{ showForm ? 'Close' : '+ Add meal' }}</button>
         </div>
+
+        <p v-if="mealsStore.error" class="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">{{ mealsStore.error }}</p>
 
         <form v-if="showForm" class="mt-3 rounded-2xl bg-white p-4 shadow-sm">
             <select v-model="form.type" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none">
@@ -92,6 +94,11 @@ const caloriePct = computed(() => {
 
 function labelFor(type) {
     return type.charAt(0).toUpperCase() + type.slice(1)
+}
+
+function toggleForm() {
+    showForm.value = !showForm.value
+    formError.value = ''
 }
 
 async function submitManual() {

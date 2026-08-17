@@ -24,6 +24,7 @@
                 </div>
             </div>
             <p v-if="saved" class="mt-3 text-sm text-emerald-600">Saved.</p>
+            <p v-if="error" class="mt-3 text-sm text-red-600">{{ error }}</p>
             <button type="submit" class="mt-4 w-full rounded-xl bg-teal-600 py-3 font-semibold text-white">Save goals</button>
         </form>
 
@@ -44,6 +45,7 @@ const goals = useGoalsStore()
 const macroFields = { protein_grams: 'Protein (g)', carbs_grams: 'Carbs (g)', fat_grams: 'Fat (g)' }
 const form = reactive({ calorie_goal: 2000, protein_grams: null, carbs_grams: null, fat_grams: null })
 const saved = ref(false)
+const error = ref(null)
 
 onMounted(async () => {
     const goal = await goals.fetch()
@@ -52,8 +54,13 @@ onMounted(async () => {
 
 async function save() {
     saved.value = false
-    await goals.update({ ...form })
-    saved.value = true
+    error.value = null
+    try {
+        await goals.update({ ...form })
+        saved.value = true
+    } catch (e) {
+        error.value = e.response?.data?.message ?? 'Could not save goals.'
+    }
 }
 
 async function logout() {

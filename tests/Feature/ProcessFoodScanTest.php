@@ -120,4 +120,25 @@ class ProcessFoodScanTest extends TestCase
         $this->assertSame(1, $meal->items()->count());
         $this->assertSame(120.0, $meal->total_calories);
     }
+
+    public function test_does_not_duplicate_items_on_retry(): void
+    {
+        $user = User::factory()->create();
+        $meal = $this->makeDraft($user);
+
+        $meal->items()->createMany([
+            ['name' => 'Old Pasta', 'grams' => 200, 'calories' => 300, 'protein' => 10, 'carbs' => 60, 'fat' => 1],
+            ['name' => 'Old Bread', 'grams' => 50, 'calories' => 130, 'protein' => 4, 'carbs' => 24, 'fat' => 2],
+        ]);
+
+        $this->fakeGeminiResponse([
+            ['name' => 'New Salad', 'grams' => 150, 'calories' => 90, 'protein' => 2, 'carbs' => 8, 'fat' => 6],
+            ['name' => 'New Soup', 'grams' => 250, 'calories' => 110, 'protein' => 5, 'carbs' => 12, 'fat' => 4],
+            ['name' => 'New Cake', 'grams' => 100, 'calories' => 350, 'protein' => 4, 'carbs' => 50, 'fat' => 16],
+        ]);
+
+        (new ProcessFoodScan($meal->id))->handle(app(\App\Services\FoodVisionService::class));
+
+        $this->assertSame(3, $meal->fresh()->items()->count());
+    }
 }

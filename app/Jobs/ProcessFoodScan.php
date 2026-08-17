@@ -42,6 +42,7 @@ class ProcessFoodScan implements ShouldQueue
             return;
         }
 
+        $meal->items()->delete();
         $meal->items()->createMany($result['items']);
         NutritionCalculator::recalculate($meal);
         $meal->forceFill(['status' => Meal::STATUS_READY, 'note' => null])->save();

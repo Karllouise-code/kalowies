@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Chart from 'chart.js/auto'
 
 const props = defineProps({
@@ -39,6 +39,13 @@ function render() {
         },
     })
 }
+
+onBeforeUnmount(() => {
+    if (chart) {
+        chart.destroy()
+        chart = null
+    }
+})
 
 onMounted(() => render())
 watch(() => props.data, render, { deep: true })

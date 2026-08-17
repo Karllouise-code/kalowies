@@ -23,15 +23,9 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../services/api'
+import { toLocalDate } from '../utils/date'
 import MealCard from '../components/MealCard.vue'
 import WeeklyChart from '../components/WeeklyChart.vue'
-
-function toLocalDate(d = new Date()) {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-}
 
 const date = ref(toLocalDate())
 const meals = ref([])

@@ -64,3 +64,37 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Frontend setup
+
+```bash
+npm install
+npm run dev        # Vite dev server (Laravel Herd serves https://kalowies.test)
+```
+
+Production assets:
+
+```bash
+npm run build
+```
+
+Frontend tests:
+
+```bash
+npm test
+```
+
+## Local verification checklist
+
+1. `php artisan serve` or open `https://kalowies.test` (Herd) with `npm run dev` running.
+2. Register a new account, then log in.
+3. Tap **Take photo**, pick an image, tap **Analyze photo**.
+4. Confirm the worker is running (`php artisan queue:work`) and `GEMINI_API_KEY` is set.
+5. When items appear, adjust a portion, remove one, then **Log meal**.
+6. Check the Today screen totals update, then view History for the 7-day chart.
+7. Install the PWA: Chrome/Edge → install icon; iOS Safari → Add to Home Screen.
+
+## Notes
+
+- The service worker only activates after a production build (`npm run build`). During dev, PWA features are off.
+- `QUEUE_CONNECTION=database` is the zero-setup fallback; use `redis` in production.

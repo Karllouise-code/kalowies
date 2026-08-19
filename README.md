@@ -1,100 +1,93 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# KaloWies
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> See your calories clearly.
 
-## About Laravel
+A calorie-tracking PWA with AI-powered food scanning. Snap a photo of your meal, and KaloWies uses Google Gemini to estimate calories and macros.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Photo scan** — camera capture or gallery upload → AI analysis → editable results → log
+- **Manual meals** — add food entries with calories, protein, carbs, fat
+- **Today dashboard** — daily calorie/macro totals with goal progress bars
+- **History** — 7-day calorie chart, browse past days
+- **Goals** — set and update daily calorie/macro targets
+- **PWA** — installable on mobile and desktop, works offline (app shell)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech Stack
 
-## Learning Laravel
+**Backend:** Laravel 11, PHP 8.2+, MySQL, Laravel Sanctum (SPA auth), Google Gemini API  
+**Frontend:** Vue 3, Pinia, Vue Router, Tailwind CSS v4, Chart.js, Vite, Vitest  
+**Queue:** Database driver (for async food scan processing)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Requirements
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- PHP 8.2+ with GD extension
+- MySQL or SQLite
+- Node.js 20+
+- Google Gemini API key (for photo scan)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Setup
 
-## Laravel Sponsors
+### 1. Backend
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+```
 
-### Premium Partners
+Set these in `.env`:
+```
+GEMINI_API_KEY=your-gemini-api-key
+QUEUE_CONNECTION=database
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## Frontend setup
+### 2. Frontend
 
 ```bash
 npm install
-npm run dev        # Vite dev server (Laravel Herd serves https://kalowies.test)
+npm run dev
 ```
 
-Production assets:
+### 3. Queue Worker
+
+Photo scans are processed in the background. Start the worker:
 
 ```bash
+php artisan queue:work
+```
+
+### 4. Run
+
+Open `https://kalowies.test` (Laravel Herd) or `http://localhost:8000` (`php artisan serve`) with `npm run dev` running.
+
+## Testing
+
+```bash
+# Backend (54 tests)
+php artisan test
+
+# Frontend (14 tests)
+npm test
+
+# Production build
 npm run build
 ```
 
-Frontend tests:
+## Environment Variables
 
-```bash
-npm test
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | Yes | Google Gemini API key for food image analysis |
+| `QUEUE_CONNECTION` | Yes | `database` for zero-setup, `redis` for production |
+| `DB_CONNECTION` | Yes | `mysql` or `sqlite` |
 
-## Local verification checklist
+## PWA
 
-1. `php artisan serve` or open `https://kalowies.test` (Herd) with `npm run dev` running.
-2. Register a new account, then log in.
-3. Tap **Take photo**, pick an image, tap **Analyze photo**.
-4. Confirm the worker is running (`php artisan queue:work`) and `GEMINI_API_KEY` is set.
-5. When items appear, adjust a portion, remove one, then **Log meal**.
-6. Check the Today screen totals update, then view History for the 7-day chart.
-7. Install the PWA: Chrome/Edge → install icon; iOS Safari → Add to Home Screen.
+- Install: Chrome/Edge → install icon in address bar; iOS Safari → Share → Add to Home Screen
+- Service worker activates after `npm run build` (PWA features are off during dev)
 
-## Notes
+## License
 
-- The service worker only activates after a production build (`npm run build`). During dev, PWA features are off.
-- `QUEUE_CONNECTION=database` is the zero-setup fallback; use `redis` in production.
+MIT

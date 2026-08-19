@@ -17,3 +17,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# AI-generated docs
+docs/
+.superpowers/
